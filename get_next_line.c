@@ -20,13 +20,13 @@ int	ft_is_line(char *str)
 	return (0);
 }
 
-int	ft_error(char *str, char *line)
+char	*ft_error(char *str, char *line)
 {
 	if (str)
 		free(str);
 	if (line)
 		free(line);
-	return (-1);
+	return (0);
 }
 
 char	*ft_strdup(char *str)
@@ -46,7 +46,7 @@ char	*ft_strdup(char *str)
 	s = (char *)malloc(sizeof(char) * ft_strlen(str) + 1);
 	if (!s)
 		return (0);
-	while (*str)
+	while (*str && *str != EOF)
 	{
 		s[l++] = *str++;
 	}
@@ -122,37 +122,49 @@ char	*ft_substr(char *s, int start, int end)
 	return (str);
 }
 
-int	get_next_line(char **line)
+char	*ft_send_line(char **str)
+{
+	char 	*tmp;
+	int	l;
+	char 	*line;
+
+	l = ft_char_in_str(*str, '\n');
+	line = ft_substr(*str, 0, l + 1);
+	if (!line)
+		return (ft_error(*str, 0));
+	tmp = *str;
+	*str = ft_substr(*str, l + 1, ft_strlen(*str));
+	if (!*str)
+		return (ft_error(tmp, line));
+	free(tmp);
+	return (line);
+}
+
+char	*get_next_line(int fd)
 {
 	static char	*str;
-	char		buff[101];
-	int			l;
+	char		buff[BUFFER_SIZE + 1];
+	int		l;
 	char		*tmp;
+	char		*line;
 
 	l = 1;
+	tmp = 0;
 	if (str && *str && ft_is_line(str))
-	{
-		l = ft_char_in_str(str, '\n');
-		*line = ft_substr(str, 0, l);
-		if (!*line)
-			return (ft_error(str, 0));
-		tmp = str;
-		str = ft_substr(str, l + 1, ft_strlen(str));
-		if (!str)
-			return (ft_error(tmp, *line));
-		free(tmp);
-		return (1);
-	}
+		return (ft_send_line(&str));
 	else
 	{
 		while (!ft_is_line(str) && l)
 		{
-			l = read(0, buff, 100);
+			l = read(fd, buff, BUFFER_SIZE);
 			if (l == -1)
+			{
 				return (ft_error(str, 0));
+			}
 			else if (l)
 			{
-				buff[l] = 0;
+				if (l)
+					buff[l] = 0;
 				tmp = str;
 				str = ft_strjoin(str, buff);
 				if (!str)
@@ -162,30 +174,26 @@ int	get_next_line(char **line)
 			}
 		}
 		if (ft_is_line(str))
-		{
-			l = ft_char_in_str(str, '\n');
-			*line = ft_substr(str, 0, l);
-			if (!*line)
-				return (ft_error(str, 0));
-			tmp = str;
-			str = ft_substr(str, l + 1, ft_strlen(str));
-			if (!str)
-				return (ft_error(tmp, *line));
-			free(tmp);
-			return (1);
-		}
+			return (ft_send_line(&str));
 		else
 		{
 			if (str && *str)
 			{
-				*line = str;
-				return (0);
+				if (!(line = ft_strdup(str)))
+					return (ft_error(str, 0));
+				free(str);
+				str = 0;
+				return (line);
+			}
+			else if (str && !*str)
+			{
+				if (str)
+					free(str);
+				str = 0;
+				return (ft_strdup(""));
 			}
 			else
-				*line = ft_strdup("");
-			if (str)
-				free(str);
-			return (0);
+				return (0);
 		}
 	}
 }
