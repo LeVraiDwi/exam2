@@ -173,7 +173,7 @@ char	*get_next_line(int fd)
 					free(tmp);
 			}
 		}
-		if (ft_is_line(str))
+		if (str & ft_is_line(str))
 			return (ft_send_line(&str));
 		else
 		{
